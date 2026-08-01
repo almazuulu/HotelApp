@@ -73,7 +73,8 @@ postgres-data/
 db-data/
 docker-compose.override.yml
 
-# Local tools and editors
+# Local reference materials, tools and editors
+Hotelier_Template/
 graphify-out/
 .DS_Store
 .idea/
