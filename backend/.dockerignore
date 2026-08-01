@@ -1,0 +1,28 @@
+# Secrets and local configuration
+.env
+.env.*
+
+# Python, Django and test artefacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+media/
+staticfiles/
+*.log
+
+# Editor and version-control metadata
+.git/
+.idea/
+.vscode/
+.DS_Store

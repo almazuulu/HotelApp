@@ -1,0 +1,45 @@
+# Version control, secrets and local editor settings
+.git/
+.gitignore
+.env
+.env.*
+.idea/
+.vscode/
+.DS_Store
+
+# Python and Django runtime artefacts
+**/__pycache__/
+**/*.py[cod]
+**/*.egg-info/
+**/.venv/
+**/venv/
+**/env/
+**/.pytest_cache/
+**/.ruff_cache/
+**/.mypy_cache/
+**/.coverage
+**/.coverage.*
+**/htmlcov/
+media/
+staticfiles/
+*.log
+
+# Node.js, Vite and browser-test artefacts
+**/node_modules/
+**/.npm/
+**/.pnpm-store/
+**/.yarn/
+**/.vite/
+**/dist/
+**/coverage/
+**/playwright-report/
+**/test-results/
+**/blob-report/
+**/*.tsbuildinfo
+
+# Local database data, tooling output and source-design reference
+postgres-data/
+db-data/
+graphify-out/
+Hotelier_Template/
+HotelAppPLAN.md
