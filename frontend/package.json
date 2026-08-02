@@ -10,7 +10,8 @@
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "generate:api-types": "openapi-typescript http://backend:8000/api/v1/schema/?format=json -o src/shared/api/generated/schema.d.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.66.0",
@@ -35,8 +36,9 @@
     "eslint-plugin-react-refresh": "^0.4.18",
     "globals": "^15.14.0",
     "jsdom": "^26.0.0",
-    "typescript-eslint": "^8.22.0",
+    "openapi-typescript": "^7.13.0",
     "typescript": "^5.9.0",
+    "typescript-eslint": "^8.22.0",
     "vite": "^7.1.0",
     "vitest": "^3.0.7"
   }

@@ -1,8 +1,299 @@
 :root {
-  color: #111;
-  background: #fff;
+  color: #0f172b;
+  background: #f1f8ff;
+  font-family: Heebo, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   min-width: 320px;
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.hotel-app-shell {
+  display: grid;
+  min-height: 100dvh;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+  background:
+    linear-gradient(115deg, rgb(15 23 43 / 95%), rgb(15 23 43 / 82%)),
+    radial-gradient(circle at 12% 18%, rgb(254 161 22 / 28%), transparent 24rem),
+    #0f172b;
+}
+
+.hotel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 5.25rem;
+  padding: 0.75rem clamp(1.25rem, 5vw, 5.5rem);
+  border-bottom: 1px solid rgb(255 255 255 / 12%);
+}
+
+.hotel-wordmark {
+  color: #fff;
+  font-family: Montserrat, "Arial Narrow", sans-serif;
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.hotel-wordmark span,
+.hotel-eyebrow,
+.auth-switch a,
+.hotel-footer a {
+  color: #fea116;
+}
+
+.hotel-nav {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.75rem, 2vw, 1.75rem);
+}
+
+.hotel-nav a,
+.hotel-logout-button {
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.hotel-nav a:hover,
+.hotel-nav a:focus-visible,
+.hotel-nav a.active {
+  color: #fea116;
+}
+
+.hotel-logout-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.hotel-logout-button:disabled {
+  color: rgb(255 255 255 / 50%);
+}
+
+.auth-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(20rem, 0.95fr);
+  gap: clamp(2.5rem, 8vw, 8rem);
+  align-items: center;
+  width: min(75rem, 100%);
+  margin: 0 auto;
+  padding: clamp(3.5rem, 9vh, 7rem) clamp(1.25rem, 5vw, 3rem);
+}
+
+.auth-intro {
+  max-width: 35rem;
+  color: #f1f8ff;
+}
+
+.hotel-eyebrow {
+  margin: 0 0 1.25rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.auth-intro h1,
+.home-main h1 {
+  margin: 0;
+  font-family: Montserrat, "Arial Narrow", sans-serif;
+  font-size: clamp(2.45rem, 6vw, 4.65rem);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1.02;
+}
+
+.auth-intro h1::after {
+  display: block;
+  width: 3.25rem;
+  height: 0.2rem;
+  margin-top: 1.75rem;
+  content: "";
+  background: #fea116;
+}
+
+.auth-intro > p:last-child {
+  max-width: 31rem;
+  margin: 1.75rem 0 0;
+  color: rgb(241 248 255 / 82%);
+  font-size: 1.08rem;
+  line-height: 1.7;
+}
+
+.auth-card {
+  padding: clamp(1.75rem, 4vw, 3rem);
+  border: 1px solid rgb(254 161 22 / 70%);
+  border-radius: 0.15rem;
+  background: #fff;
+  box-shadow: 1.25rem 1.25rem 0 rgb(254 161 22 / 13%);
+}
+
+.auth-card-lead {
+  margin: 0 0 1.75rem;
+  color: #526277;
+  line-height: 1.55;
+}
+
+.auth-card .form-label {
+  color: #0f172b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.auth-card .form-control {
+  min-height: 3rem;
+  border: 1px solid #d4dde8;
+  border-radius: 0;
+}
+
+.auth-card .form-control:focus {
+  border-color: #fea116;
+  box-shadow: 0 0 0 0.2rem rgb(254 161 22 / 18%);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.hotel-primary-button.btn {
+  min-height: 3.2rem;
+  border: 0;
+  border-radius: 0;
+  background: #fea116;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.hotel-primary-button.btn:hover,
+.hotel-primary-button.btn:focus-visible {
+  background: #d87f00;
+}
+
+.form-alert,
+.form-success {
+  margin-bottom: 1rem;
+  padding: 0.8rem 0.95rem;
+  border-left: 0.25rem solid;
+  font-size: 0.92rem;
+}
+
+.form-alert {
+  border-color: #b42318;
+  background: #fff1f0;
+  color: #8a1c13;
+}
+
+.form-success {
+  border-color: #258a5b;
+  background: #e8f8ef;
+  color: #176541;
+}
+
+.auth-switch {
+  margin: 1.5rem 0 0;
+  color: #526277;
+  text-align: center;
+}
+
+.auth-switch a,
+.hotel-footer a {
+  font-weight: 700;
+}
+
+.hotel-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem clamp(1.25rem, 5vw, 5.5rem);
+  border-top: 1px solid rgb(255 255 255 / 12%);
+  color: rgb(241 248 255 / 65%);
+  font-size: 0.82rem;
+}
+
+.hotel-footer p {
+  margin: 0;
+}
+
+.home-main {
+  display: grid;
+  align-items: center;
+  color: #fff;
+}
+
+.home-main .container {
+  padding-block: 6rem;
+}
+
+.home-main p:last-child {
+  max-width: 34rem;
+  margin-top: 1.5rem;
+  color: rgb(241 248 255 / 82%);
+  font-size: 1.1rem;
+}
+
+.page-status {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  margin: 0;
+  background: #0f172b;
+  color: #f1f8ff;
+}
+
+@media (max-width: 767px) {
+  .auth-main {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+    padding-block: 3.5rem;
+  }
+
+  .auth-card {
+    box-shadow: 0.65rem 0.65rem 0 rgb(254 161 22 / 13%);
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .hotel-footer {
+    display: block;
+  }
+
+  .hotel-footer p + p {
+    margin-top: 0.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

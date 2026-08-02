@@ -35,7 +35,7 @@ docker compose up --build
 Доступные адреса:
 
 - React SPA — http://localhost:5173
-- Django admin — http://localhost:8000/admin/
+- Django admin — http://localhost:5173/admin/ (через Vite proxy)
 - API v1 — http://localhost:8000/api/v1/
 - CSRF cookie — http://localhost:8000/api/v1/csrf/
 - OpenAPI schema — http://localhost:8000/api/v1/schema/
@@ -66,6 +66,7 @@ docker compose exec backend python manage.py spectacular --file /tmp/schema.yaml
 docker compose exec frontend npm run typecheck
 docker compose exec frontend npm run lint
 docker compose exec frontend npm test
+docker compose exec frontend npm run generate:api-types
 ```
 
 ## Session и CSRF
@@ -74,7 +75,19 @@ API использует только Django session cookie и CSRF — JWT в �
 
 Для локального HTTP cookie имеют `SameSite=Lax`, session cookie — `HttpOnly`, CSRF cookie намеренно не `HttpOnly`, чтобы SPA могла прочитать её для заголовка. Vite проксирует API на тот же origin; `DJANGO_CSRF_TRUSTED_ORIGINS` в `.env` содержит адрес dev-server. HTTPS-атрибут cookie можно включить только через `DJANGO_COOKIE_SECURE=true` в среде с HTTPS.
 
-Ошибки API всегда имеют форму `{ "code", "message", "errors" }`. Полный реестр из десяти стабильных кодов опубликован в OpenAPI как `ApiErrorCode`; frontend-потребитель и генерация типов появятся в задаче #30.
+Ошибки API всегда имеют форму `{ "code", "message", "errors" }`. Полный реестр из десяти стабильных кодов опубликован в OpenAPI как `ApiErrorCode`; account-клиент сопоставляет ошибки по этому коду, а не по тексту сообщения.
+
+## Аккаунты
+
+Публичный account API доступен по `/api/v1/auth/`:
+
+- `POST register/`, `login/`, `logout/`;
+- `GET/PATCH me/`;
+- `POST password-reset/` и `password-reset/confirm/`.
+
+Перед каждым изменяющим запросом `shared/api` запрашивает CSRF cookie и передаёт её в `X-CSRFToken`; session cookie отправляется с `credentials: include`. Типы DTO генерируются из OpenAPI: при изменении API запустите `docker compose exec frontend npm run generate:api-types` и зафиксируйте обновлённый `frontend/src/shared/api/generated/schema.d.ts`.
+
+В local-среде письмо для сброса пароля печатается в лог backend. Ссылка в нём строится от `FRONTEND_BASE_URL` из `.env`.
 
 ## Конфигурация
 
@@ -89,8 +102,8 @@ API использует только Django session cookie и CSRF — JWT в �
 Ещё не реализовано и появится в следующих задачах:
 
 - команда `seed_demo` и демо-аккаунты из `.env`;
-- доменные feature-модели и endpoint’ы; `accounts.User` добавлен только как обязательная основа первой миграции;
-- SPA: дизайн-система, feature-страницы и полноценный typed API-клиент;
+- доменные feature-модели и endpoint’ы, кроме account API;
+- SPA: страницы каталога, бронирования, оплаты и полноценный typed API-клиент для следующих feature-модулей;
 - E2E-сценарии.
 
 Этот README описывает только те команды, которые действительно работают сегодня. Планируемые команды добавляются сюда вместе с их реализацией.

@@ -1,0 +1,13 @@
+"""OpenAPI integration for the accounts authentication mechanism."""
+
+from drf_spectacular.extensions import OpenApiAuthenticationExtension
+
+
+class CsrfSessionAuthenticationScheme(OpenApiAuthenticationExtension):
+    """Describe Django's session cookie when the custom CSRF class is active."""
+
+    target_class = "apps.accounts.authentication.CsrfSessionAuthentication"
+    name = "sessionCookie"
+
+    def get_security_definition(self, auto_schema):
+        return {"type": "apiKey", "in": "cookie", "name": "sessionid"}

@@ -68,3 +68,19 @@ def test_schema_publishes_the_complete_error_catalogue() -> None:
     assert set(schema["components"]["schemas"]["ApiErrorCode"]["enum"]) == {
         code.value for code in ERROR_CATALOG
     }
+
+
+@pytest.mark.django_db
+def test_schema_publishes_account_endpoints() -> None:
+    response = APIClient().get(f"{reverse('api-v1:schema')}?format=json")
+
+    assert response.status_code == 200
+    schema = json.loads(response.content)
+    assert {
+        "/api/v1/auth/register/",
+        "/api/v1/auth/login/",
+        "/api/v1/auth/logout/",
+        "/api/v1/auth/me/",
+        "/api/v1/auth/password-reset/",
+        "/api/v1/auth/password-reset/confirm/",
+    } <= set(schema["paths"])

@@ -13,12 +13,14 @@ export default defineConfig({
     strictPort: true,
     // Bind mounts do not deliver inotify events reliably on macOS and Windows.
     watch: { usePolling: true },
-    // The SPA and the API share an origin in the browser, so there is no CORS
-    // layer to configure and the session cookie is first-party.
+    // The SPA, API and Django admin share the browser origin. This preserves
+    // first-party session cookies and lets admin assets load through Vite too.
     // changeOrigin stays false so Django sees the browser's Host and Origin.
     proxy: {
       '/api': { target: backendOrigin, changeOrigin: false },
       '/media': { target: backendOrigin, changeOrigin: false },
+      '/admin': { target: backendOrigin, changeOrigin: false },
+      '/static': { target: backendOrigin, changeOrigin: false },
     },
   },
 })
