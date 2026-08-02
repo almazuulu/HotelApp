@@ -1,4 +1,6 @@
 # Runtime dependencies shared by every environment.
 # The stack line is fixed in HotelAppPLAN.md section 1.
 Django>=5.2,<5.3
+djangorestframework>=3.17,<3.18
+drf-spectacular>=0.28,<0.29
 psycopg[binary]>=3.2,<3.3

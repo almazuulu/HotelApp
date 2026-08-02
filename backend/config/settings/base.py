@@ -7,6 +7,8 @@ documents every variable read here with a safe local placeholder.
 import os
 from pathlib import Path
 
+from config.errors import ERROR_CATALOG
+
 BASE_DIR = Path(__file__).resolve().parents[2]
 
 
@@ -34,6 +36,13 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
+    "drf_spectacular",
+    "apps.accounts.apps.AccountsConfig",
+    "apps.content.apps.ContentConfig",
+    "apps.inventory.apps.InventoryConfig",
+    "apps.bookings.apps.BookingsConfig",
+    "apps.inquiries.apps.InquiriesConfig",
 ]
 
 MIDDLEWARE = [
@@ -98,3 +107,51 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(os.environ.get("DJANGO_MEDIA_ROOT", BASE_DIR / "media"))
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# The custom user model must be configured before the first project migration.
+AUTH_USER_MODEL = "accounts.User"
+
+# The SPA and API share a browser origin through Vite's proxy. Session cookies are
+# deliberately first-party and CSRF remains enabled for every authenticated write.
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SECURE = env_bool("DJANGO_COOKIE_SECURE", False)
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SECURE = env_bool("DJANGO_COOKIE_SECURE", False)
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "EXCEPTION_HANDLER": "config.errors.exception_handler",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "HotelApp API",
+    "DESCRIPTION": "API локального учебного приложения одной гостиницы.",
+    "VERSION": "v1",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "APPEND_COMPONENTS": {
+        "schemas": {
+            "ApiErrorCode": {
+                "type": "string",
+                "description": "Стабильный код ошибки HotelApp.",
+                "enum": [code.value for code in ERROR_CATALOG],
+            },
+            "ApiError": {
+                "type": "object",
+                "required": ["code", "message", "errors"],
+                "properties": {
+                    "code": {"$ref": "#/components/schemas/ApiErrorCode"},
+                    "message": {"type": "string"},
+                    "errors": {
+                        "description": "Ошибки отдельных полей, если применимо.",
+                        "nullable": True,
+                    },
+                },
+            },
+        },
+    },
+}

@@ -1,0 +1,1 @@
+"""Fixed hotel content domain."""

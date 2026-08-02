@@ -16,4 +16,5 @@ COPY . /app
 
 EXPOSE 5173
 
+ENTRYPOINT ["sh", "/app/entrypoint.sh"]
 CMD ["npm", "run", "dev"]
