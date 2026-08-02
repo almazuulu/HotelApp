@@ -37,6 +37,7 @@ docker compose up --build
 - React SPA — http://localhost:5173
 - Django admin — http://localhost:5173/admin/ (через Vite proxy)
 - API v1 — http://localhost:8000/api/v1/
+- Публичный CMS гостиницы — http://localhost:8000/api/v1/site/
 - CSRF cookie — http://localhost:8000/api/v1/csrf/
 - OpenAPI schema — http://localhost:8000/api/v1/schema/
 - Swagger UI — http://localhost:8000/api/v1/docs/
@@ -89,6 +90,12 @@ API использует только Django session cookie и CSRF — JWT в �
 
 В local-среде письмо для сброса пароля печатается в лог backend. Ссылка в нём строится от `FRONTEND_BASE_URL` из `.env`.
 
+## CMS гостиницы
+
+`GET /api/v1/site/` — публичный read-only документ CMS: профиль одной гостиницы, hero-слайды, преимущества, контакты, footer и SEO. Сначала создайте единственный профиль в Django admin; второй профиль не создаётся ни через admin, ни на уровне базы данных. Менеджер или staff-пользователь с разрешениями `content` может редактировать этот контент в admin. Главная страница React получает его через `shared/api` и показывает понятное состояние с повторной попыткой, пока контент не опубликован.
+
+Hero-слайды используют URL изображения; локальная безопасная загрузка файлов будет добавлена отдельной задачей media. Дизайн главной опирается на `Hotelier_Template`, при этом обязательная атрибуция HTML Codex сохранена в footer.
+
 ## Конфигурация
 
 Все настройки читаются из окружения; `.env.example` описывает каждую переменную с безопасной локальной заглушкой. Реальный `.env`, данные PostgreSQL, media и `node_modules` не попадают в Git: `.env` игнорируется, а данные лежат в именованных Docker volume вне репозитория.
@@ -97,13 +104,13 @@ API использует только Django session cookie и CSRF — JWT в �
 
 ## Статус
 
-Реализованы локальное окружение Docker Compose, Django/DRF и React каркасы, единый API-контракт, OpenAPI/Swagger и базовые backend/frontend quality gates.
+Реализованы локальное окружение Docker Compose, Django/DRF и React каркасы, единый API-контракт, OpenAPI/Swagger, фиксированный CMS гостиницы и базовые backend/frontend quality gates.
 
 Ещё не реализовано и появится в следующих задачах:
 
 - команда `seed_demo` и демо-аккаунты из `.env`;
-- доменные feature-модели и endpoint’ы, кроме account API;
-- SPA: страницы каталога, бронирования, оплаты и полноценный typed API-клиент для следующих feature-модулей;
+- доменные feature-модели и endpoint’ы, кроме account API и публичного CMS;
+- SPA: каталог, бронирование, оплата и остальные публичные страницы;
 - E2E-сценарии.
 
 Этот README описывает только те команды, которые действительно работают сегодня. Планируемые команды добавляются сюда вместе с их реализацией.

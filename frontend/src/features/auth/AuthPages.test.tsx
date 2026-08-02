@@ -6,7 +6,7 @@ import { vi } from 'vitest'
 
 import type { ApiClient } from '../../shared/api/client.ts'
 import { ApiClientContext } from '../../shared/api/context.ts'
-import type { AccountUser } from '../../shared/api/types.ts'
+import type { AccountUser, SiteContent } from '../../shared/api/types.ts'
 import { AccountPage } from '../../pages/AccountPage.tsx'
 import { LoginPage } from '../../pages/LoginPage.tsx'
 import { RegisterPage } from '../../pages/RegisterPage.tsx'
@@ -20,6 +20,21 @@ const user: AccountUser = {
   phone: '+996700123456',
 }
 
+const siteContent: SiteContent = {
+  name: 'Отель Ала-Тоо',
+  tagline: 'Тихое место в центре Бишкека',
+  about_title: 'О гостинице',
+  about_text: 'Текст',
+  address: 'Бишкек',
+  phone: '+996 312 123 456',
+  email: 'stay@example.com',
+  footer_text: 'Спокойное бронирование.',
+  seo_title: 'Отель Ала-Тоо',
+  seo_description: 'Описание',
+  hero_slides: [],
+  features: [],
+}
+
 function createApiClient(overrides: Partial<ApiClient['auth']> = {}): ApiClient {
   return {
     basePath: '/api/v1',
@@ -30,6 +45,9 @@ function createApiClient(overrides: Partial<ApiClient['auth']> = {}): ApiClient 
       me: vi.fn(async () => user),
       updateProfile: vi.fn(async () => user),
       ...overrides,
+    },
+    site: {
+      getContent: vi.fn(async () => siteContent),
     },
   }
 }

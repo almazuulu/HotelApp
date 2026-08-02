@@ -8,6 +8,7 @@ describe('App', () => {
 
     render(<App />)
 
-    expect(screen.getByRole('heading', { name: 'HotelApp' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'HotelApp — главная' })).toBeInTheDocument()
+    expect(screen.getByRole('main')).toBeInTheDocument()
   })
 })

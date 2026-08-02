@@ -5,6 +5,7 @@ import type {
   LoginPayload,
   ProfileUpdatePayload,
   RegistrationPayload,
+  SiteContent,
 } from './types.ts'
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
@@ -90,6 +91,9 @@ export interface ApiClient {
     me(): Promise<AccountUser>
     updateProfile(payload: ProfileUpdatePayload): Promise<AccountUser>
   }
+  readonly site: {
+    getContent(): Promise<SiteContent>
+  }
 }
 
 export const apiClient: ApiClient = {
@@ -101,5 +105,8 @@ export const apiClient: ApiClient = {
     me: () => request<AccountUser>('/auth/me/'),
     updateProfile: (payload) =>
       request<AccountUser>('/auth/me/', { method: 'PATCH', body: JSON.stringify(payload) }),
+  },
+  site: {
+    getContent: () => request<SiteContent>('/site/'),
   },
 }
