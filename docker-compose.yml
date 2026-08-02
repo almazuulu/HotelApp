@@ -1,0 +1,79 @@
+# Local development runtime for HotelApp.
+#
+# Three containers, one process each: PostgreSQL, the Django dev server and the
+# Vite dev server. These are runtime processes of one modular monolith, not
+# microservices. Nginx, Gunicorn, Redis, Celery and a production Compose file are
+# outside the MVP boundary (HotelAppPLAN.md, section 4).
+#
+# Copy .env.example to .env before the first run.
+
+name: hotelapp
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hotelapp}
+      POSTGRES_USER: ${POSTGRES_USER:-hotelapp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hotelapp}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready --username=${POSTGRES_USER:-hotelapp} --dbname=${POSTGRES_DB:-hotelapp}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    env_file:
+      - .env
+    environment:
+      # Inside the Compose network the database is always reached by service name.
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      DJANGO_SETTINGS_MODULE: config.settings.local
+      DJANGO_MEDIA_ROOT: /app/media
+    volumes:
+      # Bind mount for hot reload; the named volume keeps uploads out of the repo.
+      - ./backend:/app
+      - media:/app/media
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    env_file:
+      - .env
+    environment:
+      # Vite proxies /api and /media to the backend container over the Compose network.
+      VITE_BACKEND_ORIGIN: http://backend:8000
+    volumes:
+      # The named volume keeps the image's node_modules from being shadowed by the
+      # bind mount, so the host does not need a local npm install.
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  media:
+  frontend-node-modules:

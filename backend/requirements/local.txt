@@ -1,0 +1,3 @@
+# Local development dependencies for the Docker Compose runtime.
+# DRF, drf-spectacular, pytest and Ruff arrive with the backend scaffolding issue.
+-r base.txt

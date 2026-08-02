@@ -1,0 +1,4 @@
+# Runtime dependencies shared by every environment.
+# The stack line is fixed in HotelAppPLAN.md section 1.
+Django>=5.2,<5.3
+psycopg[binary]>=3.2,<3.3
