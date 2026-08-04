@@ -5,6 +5,8 @@ import type {
   LoginPayload,
   ProfileUpdatePayload,
   RegistrationPayload,
+  RoomType,
+  RoomTypeFilters,
   SiteContent,
 } from './types.ts'
 
@@ -82,6 +84,22 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return (await response.json()) as T
 }
 
+function roomTypeQuery(filters: RoomTypeFilters): string {
+  const params = new URLSearchParams()
+  if (filters.adults !== undefined) {
+    params.set('adults', String(filters.adults))
+  }
+  if (filters.children !== undefined) {
+    params.set('children', String(filters.children))
+  }
+  for (const slug of filters.amenity ?? []) {
+    params.append('amenity', slug)
+  }
+
+  const query = params.toString()
+  return query === '' ? '' : `?${query}`
+}
+
 export interface ApiClient {
   readonly basePath: '/api/v1'
   readonly auth: {
@@ -93,6 +111,10 @@ export interface ApiClient {
   }
   readonly site: {
     getContent(): Promise<SiteContent>
+  }
+  readonly catalog: {
+    listRoomTypes(filters?: RoomTypeFilters): Promise<RoomType[]>
+    getRoomType(slug: string): Promise<RoomType>
   }
 }
 
@@ -108,5 +130,9 @@ export const apiClient: ApiClient = {
   },
   site: {
     getContent: () => request<SiteContent>('/site/'),
+  },
+  catalog: {
+    listRoomTypes: (filters = {}) => request<RoomType[]>(`/room-types/${roomTypeQuery(filters)}`),
+    getRoomType: (slug) => request<RoomType>(`/room-types/${encodeURIComponent(slug)}/`),
   },
 }

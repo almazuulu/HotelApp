@@ -1,9 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
 
-import { HomePage } from './HomePage.tsx'
+import { ContactsPage } from './ContactsPage.tsx'
 import { ApiError, type ApiClient } from '../shared/api/client.ts'
 import { ApiClientContext } from '../shared/api/context.ts'
 import type { SiteContent } from '../shared/api/types.ts'
@@ -22,20 +22,8 @@ const siteContent: SiteContent = {
   seo_title: 'Отель Ала-Тоо — Бишкек',
   seo_description: 'Гостиница в центре Бишкека.',
   seo_keywords: 'отель, Бишкек',
-  hero_slides: [
-    {
-      eyebrow: 'В центре города',
-      title: 'Найдите время для отдыха',
-      body: 'Светлые номера и внимательная команда.',
-      primary_cta_label: 'Посмотреть номера',
-      primary_cta_url: '#rooms',
-      secondary_cta_label: 'Связаться с нами',
-      secondary_cta_url: '#contacts',
-    },
-  ],
-  features: [
-    { icon: '☕', title: 'Завтрак', description: 'Начинайте день без спешки.' },
-  ],
+  hero_slides: [],
+  features: [],
 }
 
 function createApiClient(getContent: ApiClient['site']['getContent']): ApiClient {
@@ -53,42 +41,51 @@ function createApiClient(getContent: ApiClient['site']['getContent']): ApiClient
   }
 }
 
-function renderHome(client: ApiClient) {
+function renderContacts(client: ApiClient) {
   return render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <ApiClientContext.Provider value={client}>
-        <MemoryRouter><HomePage /></MemoryRouter>
+        <MemoryRouter>
+          <ContactsPage />
+        </MemoryRouter>
       </ApiClientContext.Provider>
     </QueryClientProvider>,
   )
 }
 
-describe('HomePage', () => {
-  it('renders public CMS content through the API adapter and applies SEO', async () => {
-    renderHome(createApiClient(vi.fn(async () => siteContent)))
+describe('ContactsPage', () => {
+  it('renders address, phone, email and reception hours from the CMS document', async () => {
+    renderContacts(createApiClient(vi.fn(async () => siteContent)))
 
-    expect(await screen.findByRole('heading', { name: 'Найдите время для отдыха' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Добро пожаловать в Отель Ала-Тоо' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Завтрак' })).toBeInTheDocument()
-    expect(screen.getByText('ул. Токтогула, 101, Бишкек')).toBeInTheDocument()
-    await waitFor(() => expect(document.title).toBe('Отель Ала-Тоо — Бишкек'))
+    const main = screen.getByRole('main')
+
+    expect(await within(main).findByText('ул. Токтогула, 101, Бишкек')).toBeInTheDocument()
+    expect(within(main).getByRole('link', { name: '+996 312 123 456' })).toHaveAttribute(
+      'href',
+      'tel:+996312123456',
+    )
+    expect(within(main).getByRole('link', { name: 'stay@example.com' })).toHaveAttribute(
+      'href',
+      'mailto:stay@example.com',
+    )
+    expect(within(main).getByText('Заезд с 14:00')).toBeInTheDocument()
+    expect(within(main).getByText('Выезд до 12:00')).toBeInTheDocument()
+    await waitFor(() => expect(document.title).toBe('Контакты — Отель Ала-Тоо'))
   })
 
   it('offers a retry when the CMS document is unavailable', async () => {
     const getContent = vi
       .fn<ApiClient['site']['getContent']>()
-      .mockRejectedValueOnce(
-        new ApiError({ code: 'NOT_FOUND', message: 'Объект не найден.', errors: null }),
-      )
+      .mockRejectedValueOnce(new ApiError({ code: 'NOT_FOUND', message: 'Объект не найден.', errors: null }))
       .mockResolvedValueOnce(siteContent)
     const user = (await import('@testing-library/user-event')).default.setup()
 
-    renderHome(createApiClient(getContent))
+    renderContacts(createApiClient(getContent))
 
     await screen.findByRole('heading', { name: 'Контент ещё не опубликован' })
     await user.click(screen.getByRole('button', { name: 'Повторить попытку' }))
 
-    expect(await screen.findByRole('heading', { name: 'Найдите время для отдыха' })).toBeInTheDocument()
-    expect(getContent).toHaveBeenCalledTimes(2)
+    const main = screen.getByRole('main')
+    expect(await within(main).findByText('ул. Токтогула, 101, Бишкек')).toBeInTheDocument()
   })
 })

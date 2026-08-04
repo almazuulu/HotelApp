@@ -49,6 +49,10 @@ function createApiClient(overrides: Partial<ApiClient['auth']> = {}): ApiClient 
     site: {
       getContent: vi.fn(async () => siteContent),
     },
+    catalog: {
+      listRoomTypes: vi.fn(),
+      getRoomType: vi.fn(),
+    },
   }
 }
 
