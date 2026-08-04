@@ -38,6 +38,7 @@ docker compose up --build
 - Django admin — http://localhost:5173/admin/ (через Vite proxy)
 - API v1 — http://localhost:8000/api/v1/
 - Публичный CMS гостиницы — http://localhost:8000/api/v1/site/
+- Публичный каталог категорий — http://localhost:8000/api/v1/room-types/
 - CSRF cookie — http://localhost:8000/api/v1/csrf/
 - OpenAPI schema — http://localhost:8000/api/v1/schema/
 - Swagger UI — http://localhost:8000/api/v1/docs/
@@ -96,6 +97,25 @@ API использует только Django session cookie и CSRF — JWT в �
 
 Hero-слайды используют URL изображения; локальная безопасная загрузка файлов будет добавлена отдельной задачей media. Дизайн главной опирается на `Hotelier_Template`, при этом обязательная атрибуция HTML Codex сохранена в footer.
 
+## Каталог номеров
+
+`GET /api/v1/room-types/` возвращает все публичные категории номеров обычным массивом без
+pagination. Ответ содержит только данные категории: цену и площадь как строки Decimal, лимиты
+взрослых и детей, режим подтверждения, удобства и упорядоченную URL-галерею. Физические номера
+и их ID в API не публикуются.
+
+Список принимает необязательные фильтры `adults` (целое число от 1), `children` (целое число от
+0) и повторяемый `amenity` (slug). Все переданные `amenity` должны быть у категории:
+
+```text
+GET /api/v1/room-types/?adults=2&children=1&amenity=wifi&amenity=breakfast
+```
+
+`GET /api/v1/room-types/{slug}/` возвращает одну категорию. Каталог доступен только для чтения:
+создание и изменение выполняются менеджером в Django admin. Контент-редактор может менять
+маркетинговые поля категории, удобства и галерею, но не видит и не изменяет цену, лимиты вместимости
+или режим подтверждения; физические комнаты ему недоступны.
+
 ## Конфигурация
 
 Все настройки читаются из окружения; `.env.example` описывает каждую переменную с безопасной локальной заглушкой. Реальный `.env`, данные PostgreSQL, media и `node_modules` не попадают в Git: `.env` игнорируется, а данные лежат в именованных Docker volume вне репозитория.
@@ -104,7 +124,7 @@ Hero-слайды используют URL изображения; локаль�
 
 ## Статус
 
-Реализованы локальное окружение Docker Compose, Django/DRF и React каркасы, единый API-контракт, OpenAPI/Swagger, фиксированный CMS гостиницы и базовые backend/frontend quality gates.
+Реализованы локальное окружение Docker Compose, Django/DRF и React каркасы, единый API-контракт, OpenAPI/Swagger, фиксированный CMS гостиницы, публичный каталог категорий и базовые backend/frontend quality gates.
 
 Ещё не реализовано и появится в следующих задачах:
 

@@ -141,6 +141,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/room-types/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Return all public room categories, optionally filtered by capacity and amenities. */
+        get: operations["room_types_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/room-types/{slug}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Return one public category by slug without exposing physical room assignment. */
+        get: operations["room_types_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/site/": {
         parameters: {
             query?: never;
@@ -162,6 +196,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        Amenity: {
+            /** Название */
+            name: string;
+            slug: string;
+        };
         ApiError: {
             code: components["schemas"]["ApiErrorCode"];
             message: string;
@@ -177,6 +216,12 @@ export interface components {
             service: string;
             version: string;
         };
+        /**
+         * @description * `automatic` - автоматическое
+         *     * `manual` - ручное
+         * @enum {string}
+         */
+        ConfirmationModeEnum: "automatic" | "manual";
         CsrfCookieResponse: {
             detail: string;
         };
@@ -265,6 +310,35 @@ export interface components {
             last_name: string;
             phone: string;
             password: string;
+        };
+        /** @description The customer-safe catalog DTO; physical rooms and all IDs stay internal. */
+        RoomType: {
+            /** Название */
+            name: string;
+            slug: string;
+            /** Описание */
+            description: string;
+            /** Format: decimal */
+            readonly price_per_night: string;
+            /** Максимум взрослых */
+            max_adults: number;
+            readonly max_children: number;
+            /** Format: decimal */
+            readonly area_sqm: string;
+            /** Количество кроватей */
+            bed_count: number;
+            readonly confirmation_mode: components["schemas"]["ConfirmationModeEnum"];
+            readonly amenities: components["schemas"]["Amenity"][];
+            readonly images: components["schemas"]["RoomTypeImage"][];
+        };
+        RoomTypeImage: {
+            /**
+             * URL изображения
+             * Format: uri
+             */
+            image_url: string;
+            /** Альтернативный текст */
+            alt_text: string;
         };
         /** @description The complete public CMS document; it intentionally has no write path. */
         SiteContent: {
@@ -698,6 +772,69 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CsrfCookieResponse"];
+                };
+            };
+        };
+    };
+    room_types_list: {
+        parameters: {
+            query?: {
+                /** @description Минимальная вместимость по взрослым; целое число от 1. */
+                adults?: number;
+                /** @description Повторяемый slug удобства; категория должна содержать все значения. */
+                amenity?: string[];
+                /** @description Минимальная вместимость по детям; целое число от 0. */
+                children?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoomType"][];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    room_types_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoomType"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
                 };
             };
         };
