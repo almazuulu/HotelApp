@@ -1,9 +1,11 @@
 """Django admin for the manager-owned inventory catalog."""
 
+from django import forms
 from django.contrib import admin
-from django.db import models
+from django.db import models, transaction
 
-from .models import Amenity, Room, RoomType, RoomTypeImage
+from .models import Amenity, MaintenanceBlock, Room, RoomType, RoomTypeImage
+from .occupancy import Stay, allocate, release
 
 COMMERCIAL_FIELDS = (
     "price_per_night",
@@ -71,3 +73,66 @@ class RoomAdmin(admin.ModelAdmin):
     list_display = ("number", "room_type")
     list_filter = ("room_type",)
     search_fields = ("number", "room_type__name", "room_type__slug")
+
+
+class MaintenanceBlockAdminForm(forms.ModelForm):
+    check_in = forms.DateField(label="Начало", required=False)
+    check_out = forms.DateField(label="Окончание", required=False)
+
+    class Meta:
+        model = MaintenanceBlock
+        fields = ("room", "reason")
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if self.instance.pk is not None:
+            return cleaned_data
+        check_in = cleaned_data.get("check_in")
+        check_out = cleaned_data.get("check_out")
+        if check_in is None or check_out is None:
+            raise forms.ValidationError("Укажите даты начала и окончания.")
+        try:
+            self.stay = Stay(check_in=check_in, check_out=check_out)
+        except ValueError:
+            raise forms.ValidationError("Дата окончания должна быть позже даты начала.") from None
+        return cleaned_data
+
+
+@admin.register(MaintenanceBlock)
+class MaintenanceBlockAdmin(admin.ModelAdmin):
+    form = MaintenanceBlockAdminForm
+    list_display = ("room", "reason", "created_by", "created_at")
+    list_filter = ("room__room_type",)
+    search_fields = ("room__number", "reason", "created_by__username")
+
+    def get_fieldsets(self, request, obj=None):
+        if obj is None:
+            return ((None, {"fields": ("room", "reason", "check_in", "check_out")}),)
+        return ((None, {"fields": ("room", "reason", "created_by", "created_at", "updated_at")}),)
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = ("created_at", "updated_at")
+        if obj is not None:
+            return ("room", "created_by", *fields)
+        return fields
+
+    def save_model(self, request, obj, form, change) -> None:
+        if change:
+            super().save_model(request, obj, form, change)
+            return
+
+        obj.created_by = request.user
+        with transaction.atomic():
+            super().save_model(request, obj, form, change)
+            allocate(obj.room.room_type, form.stay, obj)
+
+    def delete_model(self, request, obj) -> None:
+        with transaction.atomic():
+            release(obj)
+            super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset) -> None:
+        with transaction.atomic():
+            for maintenance_block in queryset:
+                release(maintenance_block)
+            queryset.delete()
