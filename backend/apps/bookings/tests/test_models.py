@@ -7,7 +7,11 @@ from django.db import IntegrityError
 from django.utils import timezone
 
 from apps.accounts.models import User
-from apps.bookings.models import Booking, BookingStatus
+from apps.bookings.models import (
+    TERMINAL_BOOKING_STATUSES,
+    Booking,
+    BookingStatus,
+)
 from apps.inventory.models import RoomType
 
 
@@ -73,6 +77,7 @@ def test_booking_generates_a_unique_uuid_reference() -> None:
     ("field", "value"),
     [
         ("check_out", date(2026, 9, 10)),
+        ("check_out", date(2026, 9, 9)),
         ("adults", 0),
         ("children", -1),
         ("status", "unknown"),
@@ -98,6 +103,17 @@ def test_active_booking_statuses_require_an_expiry(status: BookingStatus) -> Non
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     "status",
+    [BookingStatus.PENDING_CONFIRMATION, BookingStatus.AWAITING_PAYMENT],
+)
+def test_active_booking_statuses_allow_an_expiry(status: BookingStatus) -> None:
+    booking = create_booking(status=status)
+
+    assert booking.expires_at is not None
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "status",
     [
         BookingStatus.PAID,
         BookingStatus.REJECTED,
@@ -105,7 +121,7 @@ def test_active_booking_statuses_require_an_expiry(status: BookingStatus) -> Non
         BookingStatus.EXPIRED,
     ],
 )
-def test_paid_and_terminal_booking_statuses_require_no_expiry(status: BookingStatus) -> None:
+def test_non_expiring_booking_statuses_reject_an_expiry(status: BookingStatus) -> None:
     with pytest.raises(IntegrityError):
         create_booking(status=status)
 
@@ -120,10 +136,18 @@ def test_paid_and_terminal_booking_statuses_require_no_expiry(status: BookingSta
         BookingStatus.EXPIRED,
     ],
 )
-def test_paid_and_terminal_booking_statuses_allow_a_null_expiry(status: BookingStatus) -> None:
+def test_non_expiring_booking_statuses_allow_a_null_expiry(status: BookingStatus) -> None:
     booking = create_booking(status=status, expires_at=None)
 
     assert booking.status == status
+
+
+def test_paid_is_not_a_terminal_booking_status() -> None:
+    assert TERMINAL_BOOKING_STATUSES == (
+        BookingStatus.REJECTED,
+        BookingStatus.CANCELLED,
+        BookingStatus.EXPIRED,
+    )
 
 
 def test_booking_does_not_contain_a_physical_room() -> None:

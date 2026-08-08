@@ -26,10 +26,14 @@ ACTIVE_BOOKING_STATUSES = (
 )
 
 TERMINAL_BOOKING_STATUSES = (
-    BookingStatus.PAID,
     BookingStatus.REJECTED,
     BookingStatus.CANCELLED,
     BookingStatus.EXPIRED,
+)
+
+NON_EXPIRING_BOOKING_STATUSES = (
+    BookingStatus.PAID,
+    *TERMINAL_BOOKING_STATUSES,
 )
 
 
@@ -82,7 +86,7 @@ class Booking(models.Model):
             models.CheckConstraint(
                 condition=(
                     Q(status__in=ACTIVE_BOOKING_STATUSES, expires_at__isnull=False)
-                    | Q(status__in=TERMINAL_BOOKING_STATUSES, expires_at__isnull=True)
+                    | Q(status__in=NON_EXPIRING_BOOKING_STATUSES, expires_at__isnull=True)
                 ),
                 name="bookings_booking_expires_at_matches_status",
             ),
