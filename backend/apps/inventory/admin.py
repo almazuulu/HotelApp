@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.db import models, transaction
 
 from .models import Amenity, MaintenanceBlock, Room, RoomType, RoomTypeImage
-from .occupancy import Stay, allocate, release
+from .occupancy import RoomUnavailable, Stay, allocate, release
 
 COMMERCIAL_FIELDS = (
     "price_per_night",
@@ -13,6 +13,7 @@ COMMERCIAL_FIELDS = (
     "max_children",
     "confirmation_mode",
 )
+ALLOCATION_CONFLICT_MESSAGE = "На указанный период комната недоступна."
 
 
 class RoomTypeImageInline(admin.TabularInline):
@@ -104,6 +105,26 @@ class MaintenanceBlockAdmin(admin.ModelAdmin):
     list_display = ("room", "reason", "created_by", "created_at")
     list_filter = ("room__room_type",)
     search_fields = ("room__number", "reason", "created_by__username")
+
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        form_class = super().get_form(request, obj, change, **kwargs)
+        if not getattr(request, "_maintenance_block_allocation_conflict", False):
+            return form_class
+
+        class AllocationConflictForm(form_class):
+            def clean(self):
+                cleaned_data = super().clean()
+                self.add_error(None, ALLOCATION_CONFLICT_MESSAGE)
+                return cleaned_data
+
+        return AllocationConflictForm
+
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        try:
+            return super().changeform_view(request, object_id, form_url, extra_context)
+        except RoomUnavailable:
+            request._maintenance_block_allocation_conflict = True
+            return super().changeform_view(request, object_id, form_url, extra_context)
 
     def get_fieldsets(self, request, obj=None):
         if obj is None:

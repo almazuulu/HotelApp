@@ -201,11 +201,26 @@ def test_allocate_does_not_translate_non_exclusion_integrity_errors() -> None:
 def test_room_occupancy_requires_exactly_one_holder() -> None:
     room_type = create_room_type()
     room = Room.objects.create(room_type=room_type, number="901")
+    booking = create_booking(room_type, "both-holders")
+    maintenance_block = MaintenanceBlock.objects.create(
+        room=room,
+        reason="Плановая уборка",
+        created_by=create_user("both-holders-manager"),
+    )
 
     with transaction.atomic():
         with pytest.raises(IntegrityError):
             RoomOccupancy.objects.create(
                 room=room,
+                stay=(date(2026, 9, 10), date(2026, 9, 11)),
+            )
+
+    with transaction.atomic():
+        with pytest.raises(IntegrityError):
+            RoomOccupancy.objects.create(
+                room=room,
+                booking=booking,
+                maintenance_block=maintenance_block,
                 stay=(date(2026, 9, 10), date(2026, 9, 11)),
             )
 
@@ -268,3 +283,37 @@ def test_admin_creates_and_deletes_maintenance_blocks_through_the_ledger(client)
 
     assert delete_response.status_code == 302
     assert not RoomOccupancy.objects.exists()
+
+
+@pytest.mark.django_db
+def test_admin_renders_an_error_for_a_conflicting_maintenance_block(client) -> None:
+    manager = get_user_model().objects.create_superuser(
+        username="conflicting-manager",
+        email="conflicting-manager@example.com",
+        first_name="Отель",
+        last_name="Менеджер",
+        phone="+996555999998",
+        password="test-password",
+    )
+    room_type = create_room_type()
+    room = Room.objects.create(room_type=room_type, number="1002")
+    booking = create_booking(room_type, "admin-conflict")
+    stay = Stay(date(2026, 9, 10), date(2026, 9, 11))
+    allocate(room_type, stay, booking)
+    client.force_login(manager)
+
+    response = client.post(
+        reverse("admin:inventory_maintenanceblock_add"),
+        {
+            "room": room.pk,
+            "reason": "Плановая уборка",
+            "check_in": "2026-09-10",
+            "check_out": "2026-09-11",
+            "_save": "Сохранить",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "На указанный период комната недоступна." in response.content.decode()
+    assert not MaintenanceBlock.objects.exists()
+    assert RoomOccupancy.objects.get().booking == booking
