@@ -1,10 +1,10 @@
 from decimal import Decimal
 
 import pytest
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, connection, transaction
 from django.db.models.deletion import ProtectedError
 
-from apps.inventory.models import Amenity, Room, RoomType, RoomTypeImage
+from apps.inventory.models import Amenity, Room, RoomOccupancy, RoomType, RoomTypeImage
 
 
 def create_room_type(**overrides: object) -> RoomType:
@@ -113,3 +113,12 @@ def test_amenities_are_sorted_by_name() -> None:
     Amenity.objects.create(name="Завтрак", slug="breakfast")
 
     assert list(Amenity.objects.values_list("slug", flat=True)) == ["wifi", "breakfast"]
+
+
+@pytest.mark.django_db
+@pytest.mark.skipif(
+    connection.vendor != "sqlite",
+    reason="the PostgreSQL suite intentionally creates RoomOccupancy",
+)
+def test_room_occupancy_table_is_not_created_for_the_sqlite_suite() -> None:
+    assert RoomOccupancy._meta.db_table not in connection.introspection.table_names()

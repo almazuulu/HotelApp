@@ -63,6 +63,7 @@ docker compose exec backend python manage.py migrate
 docker compose exec backend python manage.py createsuperuser
 docker compose exec backend python manage.py check
 docker compose exec backend pytest
+docker compose exec backend pytest -c pytest-postgres.ini apps/inventory/tests/test_occupancy.py tests/test_occupancy_concurrency.py
 docker compose exec backend ruff check .
 docker compose exec backend python manage.py spectacular --file /tmp/schema.yaml --validate
 docker compose exec frontend npm run typecheck
@@ -70,6 +71,10 @@ docker compose exec frontend npm run lint
 docker compose exec frontend npm test
 docker compose exec frontend npm run generate:api-types
 ```
+
+Вторая команда `pytest` запускает PostgreSQL-набор занятости и concurrency: Django создаёт
+отдельную test-базу, проверяет `btree_gist`, exclusion constraint и гонку за последний номер.
+Обычный `pytest` остаётся быстрым SQLite-набором и намеренно не создаёт таблицу `RoomOccupancy`.
 
 ## Session и CSRF
 
@@ -124,12 +129,12 @@ GET /api/v1/room-types/?adults=2&children=1&amenity=wifi&amenity=breakfast
 
 ## Статус
 
-Реализованы локальное окружение Docker Compose, Django/DRF и React каркасы, единый API-контракт, OpenAPI/Swagger, фиксированный CMS гостиницы, публичный каталог категорий и базовые backend/frontend quality gates.
+Реализованы локальное окружение Docker Compose, Django/DRF и React каркасы, единый API-контракт, OpenAPI/Swagger, фиксированный CMS гостиницы, публичный каталог категорий, Booking foundation, stay policy и PostgreSQL occupancy ledger без публичных booking-endpoint’ов.
 
 Ещё не реализовано и появится в следующих задачах:
 
 - команда `seed_demo` и демо-аккаунты из `.env`;
-- доменные feature-модели и endpoint’ы, кроме account API и публичного CMS;
+- booking API, lifecycle, котировки, idempotency и demo-оплата;
 - SPA: каталог, бронирование, оплата и остальные публичные страницы;
 - E2E-сценарии.
 
