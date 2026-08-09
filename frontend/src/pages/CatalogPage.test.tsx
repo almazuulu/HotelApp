@@ -95,21 +95,33 @@ describe('CatalogPage', () => {
     expect(await screen.findByRole('heading', { name: 'Делюкс с видом на горы' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Стандарт' })).toBeInTheDocument()
     expect(screen.getByText('$120')).toBeInTheDocument()
+    expect(screen.getByText('Найдено категорий: 2')).toHaveAttribute('aria-live', 'polite')
     await waitFor(() => expect(document.title).toBe('Номера — Отель Ала-Тоо'))
   })
 
+  it('does not show the result summary while the catalog is loading', async () => {
+    renderCatalog(createApiClient({ listRoomTypes: vi.fn(() => new Promise<RoomType[]>(() => undefined)) }))
+
+    expect(await screen.findByRole('heading', { name: 'Загружаем номера' })).toBeInTheDocument()
+    expect(screen.queryByText(/Найдено категорий:/)).not.toBeInTheDocument()
+  })
+
   it('sends the selected capacity filter to the API', async () => {
-    const listRoomTypes = vi.fn(async () => [deluxe])
+    const listRoomTypes = vi.fn<ApiClient['catalog']['listRoomTypes']>(async (filters) =>
+      filters?.adults === 2 ? [deluxe] : [deluxe, standard],
+    )
     const user = (await import('@testing-library/user-event')).default.setup()
 
     renderCatalog(createApiClient({ listRoomTypes }))
     await screen.findByRole('heading', { name: 'Делюкс с видом на горы' })
+    expect(screen.getByText('Найдено категорий: 2')).toHaveAttribute('aria-live', 'polite')
 
     await user.selectOptions(screen.getByLabelText('Взрослые'), '2')
 
     await waitFor(() =>
       expect(listRoomTypes).toHaveBeenCalledWith(expect.objectContaining({ adults: 2 })),
     )
+    expect(await screen.findByText('Найдено категорий: 1')).toHaveAttribute('aria-live', 'polite')
   })
 
   it('offers a retry when the catalog fails to load', async () => {
@@ -122,6 +134,7 @@ describe('CatalogPage', () => {
     renderCatalog(createApiClient({ listRoomTypes }))
 
     await screen.findByRole('heading', { name: 'Не удалось открыть каталог' })
+    expect(screen.queryByText(/Найдено категорий:/)).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Повторить попытку' }))
 
     expect(await screen.findByRole('heading', { name: 'Делюкс с видом на горы' })).toBeInTheDocument()
@@ -131,5 +144,6 @@ describe('CatalogPage', () => {
     renderCatalog(createApiClient({ listRoomTypes: vi.fn(async () => []) }))
 
     expect(await screen.findByRole('heading', { name: 'Каталог пока пуст' })).toBeInTheDocument()
+    expect(screen.queryByText(/Найдено категорий:/)).not.toBeInTheDocument()
   })
 })
