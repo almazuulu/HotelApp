@@ -11,6 +11,7 @@ urlpatterns = [
     path("", api_root, name="root"),
     path("csrf/", csrf, name="csrf"),
     path("auth/", include(("apps.accounts.urls", "accounts"), namespace="accounts")),
+    path("quotes/", include(("apps.bookings.urls", "bookings"), namespace="bookings")),
     path("site/", include(("apps.content.urls", "content"), namespace="content")),
     path(
         "room-types/",
