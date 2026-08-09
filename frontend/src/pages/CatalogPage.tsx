@@ -120,11 +120,16 @@ export function CatalogPage() {
               ) : null}
             </div>
           ) : (
-            <div className="room-grid">
-              {rooms.map((roomType) => (
-                <RoomTypeCard key={roomType.slug} roomType={roomType} />
-              ))}
-            </div>
+            <>
+              <p className="room-catalog-summary" aria-live="polite">
+                Найдено категорий: {rooms.length}
+              </p>
+              <div className="room-grid">
+                {rooms.map((roomType) => (
+                  <RoomTypeCard key={roomType.slug} roomType={roomType} />
+                ))}
+              </div>
+            </>
           )}
         </Container>
       </section>
