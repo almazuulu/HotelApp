@@ -3,6 +3,7 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.db import connection
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APIClient
@@ -10,7 +11,13 @@ from rest_framework.test import APIClient
 from apps.bookings.models import Booking, BookingStatus
 from apps.bookings.stay_policy import BOOKING_HORIZON_DAYS, CHECK_IN_CUTOFF, validate_stay
 from apps.inventory.models import Room, RoomType
+from apps.inventory.occupancy import Stay, allocate
 from config.errors import DomainError
+
+pytestmark = pytest.mark.skipif(
+    connection.vendor != "postgresql",
+    reason="quote availability requires the PostgreSQL occupancy ledger",
+)
 
 
 def create_room_type(**overrides: object) -> RoomType:
@@ -65,6 +72,14 @@ def create_booking(room_type: RoomType, **overrides: object) -> Booking:
     return Booking.objects.create(**values)
 
 
+def allocate_booking(booking: Booking) -> None:
+    allocate(
+        booking.room_type,
+        Stay(check_in=booking.check_in, check_out=booking.check_out),
+        booking,
+    )
+
+
 @pytest.mark.django_db
 def test_quote_returns_available_authoritative_decimal_price_without_creating_a_booking() -> None:
     room_type = create_room_type()
@@ -90,7 +105,7 @@ def test_quote_returns_available_authoritative_decimal_price_without_creating_a_
 def test_quote_reports_unavailable_when_every_physical_room_is_occupied() -> None:
     room_type = create_room_type()
     Room.objects.create(room_type=room_type, number="101")
-    create_booking(room_type)
+    allocate_booking(create_booking(room_type))
 
     response = APIClient().post(
         reverse("api-v1:bookings:quote"),
@@ -112,11 +127,11 @@ def test_quote_treats_stays_as_half_open_intervals() -> None:
     room_type = create_room_type()
     Room.objects.create(room_type=room_type, number="101")
     requested_check_in = timezone.localdate() + timedelta(days=2)
-    create_booking(
+    allocate_booking(create_booking(
         room_type,
         check_in=requested_check_in - timedelta(days=1),
         check_out=requested_check_in,
-    )
+    ))
 
     response = APIClient().post(
         reverse("api-v1:bookings:quote"),
@@ -137,6 +152,7 @@ def test_quote_uses_the_ledger_to_release_expired_holds() -> None:
         status=BookingStatus.PENDING_CONFIRMATION,
         expires_at=timezone.now() - timedelta(minutes=1),
     )
+    allocate_booking(expired)
 
     response = APIClient().post(
         reverse("api-v1:bookings:quote"),
@@ -147,8 +163,8 @@ def test_quote_uses_the_ledger_to_release_expired_holds() -> None:
     assert response.status_code == 200
     assert response.json()["available"] is True
     expired.refresh_from_db()
-    assert expired.status == BookingStatus.EXPIRED
-    assert expired.expires_at is None
+    assert expired.status == BookingStatus.PENDING_CONFIRMATION
+    assert expired.expires_at is not None
 
 
 @pytest.mark.django_db

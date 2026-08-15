@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from django.conf import settings
+from django.contrib.postgres.constraints import ExclusionConstraint
+from django.contrib.postgres.fields import DateRangeField
+from django.contrib.postgres.fields.ranges import RangeOperators
 from django.db import models
 from django.db.models import Q
 
@@ -129,3 +133,80 @@ class Room(models.Model):
 
     def __str__(self) -> str:
         return self.number
+
+
+class MaintenanceBlock(models.Model):
+    """A manager-owned operational use of one physical room."""
+
+    room = models.ForeignKey(
+        Room,
+        on_delete=models.PROTECT,
+        related_name="maintenance_blocks",
+        verbose_name="комната",
+    )
+    reason = models.TextField("причина")
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="created_maintenance_blocks",
+        verbose_name="автор",
+    )
+    created_at = models.DateTimeField("создан", auto_now_add=True)
+    updated_at = models.DateTimeField("обновлён", auto_now=True)
+
+    class Meta:
+        ordering = ("-created_at", "-pk")
+        verbose_name = "служебный блок"
+        verbose_name_plural = "служебные блоки"
+
+    def __str__(self) -> str:
+        return f"{self.room}: {self.reason}"
+
+
+class RoomOccupancy(models.Model):
+    """PostgreSQL-only occupancy owned exclusively by the inventory ledger."""
+
+    room = models.ForeignKey(
+        Room,
+        on_delete=models.PROTECT,
+        related_name="occupancies",
+        verbose_name="комната",
+    )
+    stay = DateRangeField("проживание")
+    booking = models.OneToOneField(
+        "bookings.Booking",
+        on_delete=models.CASCADE,
+        related_name="occupancy",
+        null=True,
+        blank=True,
+        verbose_name="бронь",
+    )
+    maintenance_block = models.OneToOneField(
+        MaintenanceBlock,
+        on_delete=models.CASCADE,
+        related_name="occupancy",
+        null=True,
+        blank=True,
+        verbose_name="служебный блок",
+    )
+
+    class Meta:
+        required_db_vendor = "postgresql"
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    Q(booking__isnull=False, maintenance_block__isnull=True)
+                    | Q(booking__isnull=True, maintenance_block__isnull=False)
+                ),
+                name="inventory_room_occupancy_exactly_one_holder",
+            ),
+            ExclusionConstraint(
+                expressions=(
+                    ("room", RangeOperators.EQUAL),
+                    ("stay", RangeOperators.OVERLAPS),
+                ),
+                name="inventory_room_occupancy_no_overlapping_stays",
+            ),
+        ]
+        verbose_name = "занятость комнаты"
+        verbose_name_plural = "занятость комнат"

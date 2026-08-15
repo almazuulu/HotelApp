@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from apps.inventory.models import RoomType
-from apps.inventory.occupancy import OccupancyLedger
+from apps.inventory.occupancy import search
 
 from .stay_policy import Stay
 
@@ -25,11 +25,10 @@ def calculate_quote(
     room_type: RoomType,
     adults: int,
     children: int,
-    ledger: OccupancyLedger,
 ) -> Quote:
     """Calculate the current quote without creating a booking or hold."""
 
-    available_room_type_ids = {candidate.pk for candidate in ledger.search(stay, adults, children)}
+    available_room_type_ids = {candidate.pk for candidate in search(stay, adults, children)}
     price_per_night = room_type.price_per_night
     return Quote(
         available=room_type.pk in available_room_type_ids,

@@ -10,7 +10,6 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from apps.inventory.models import RoomType
-from apps.inventory.occupancy import occupancy_ledger
 
 from .quote import calculate_quote
 from .serializers import QuoteRequestSerializer, QuoteSerializer
@@ -43,6 +42,5 @@ def quote(request: Request) -> Response:
         room_type=room_type,
         adults=data["adults"],
         children=data["children"],
-        ledger=occupancy_ledger,
     )
     return Response(QuoteSerializer(result).data)
