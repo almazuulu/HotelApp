@@ -1,5 +1,5 @@
 import Carousel from 'react-bootstrap/Carousel'
-import { useState } from 'react'
+import { useRef, useState, type KeyboardEvent } from 'react'
 
 import type { RoomTypeImage } from '../../shared/api/types.ts'
 
@@ -10,6 +10,36 @@ interface RoomTypeGalleryProps {
 
 export function RoomTypeGallery({ images, roomName }: RoomTypeGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0)
+  const thumbnailRefs = useRef<Array<HTMLButtonElement | null>>([])
+
+  function handleThumbnailKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+    if (images.length < 2) {
+      return
+    }
+
+    let nextIndex: number | null = null
+
+    switch (event.key) {
+      case 'ArrowLeft':
+        nextIndex = (index - 1 + images.length) % images.length
+        break
+      case 'ArrowRight':
+        nextIndex = (index + 1) % images.length
+        break
+      case 'Home':
+        nextIndex = 0
+        break
+      case 'End':
+        nextIndex = images.length - 1
+        break
+      default:
+        return
+    }
+
+    event.preventDefault()
+    setActiveIndex(nextIndex)
+    thumbnailRefs.current[nextIndex]?.focus()
+  }
 
   if (images.length === 0) {
     return (
@@ -45,6 +75,10 @@ export function RoomTypeGallery({ images, roomName }: RoomTypeGalleryProps) {
                 aria-current={index === activeIndex ? 'true' : undefined}
                 aria-label={`Показать фото ${index + 1} из ${images.length}`}
                 onClick={() => setActiveIndex(index)}
+                onKeyDown={(event) => handleThumbnailKeyDown(event, index)}
+                ref={(element) => {
+                  thumbnailRefs.current[index] = element
+                }}
               >
                 <img src={image.image_url} alt="" loading="lazy" />
               </button>
