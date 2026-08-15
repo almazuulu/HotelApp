@@ -6,6 +6,7 @@ from django.db import IntegrityError, connection, transaction
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.bookings.lifecycle import cancel_booking
 from apps.bookings.models import Booking, BookingStatus
 from apps.inventory.models import MaintenanceBlock, Room, RoomOccupancy, RoomType
 from apps.inventory.occupancy import RoomUnavailable, Stay, allocate, release, search
@@ -136,6 +137,21 @@ def test_allocate_makes_a_category_unavailable_and_release_is_idempotent() -> No
     release(booking)
     release(booking)
 
+    assert RoomOccupancy.objects.count() == 0
+    assert list(search(stay, adults=1, children=0)) == [room_type]
+
+
+@pytest.mark.django_db
+def test_cancelling_a_booking_releases_its_physical_room_through_the_ledger() -> None:
+    room_type = create_room_type()
+    Room.objects.create(room_type=room_type, number="451")
+    booking = create_booking(room_type, "cancelled")
+    stay = Stay(date(2026, 9, 10), date(2026, 9, 11))
+    allocate(room_type, stay, booking)
+
+    cancelled = cancel_booking(booking, timezone.now())
+
+    assert cancelled.status == BookingStatus.CANCELLED
     assert RoomOccupancy.objects.count() == 0
     assert list(search(stay, adults=1, children=0)) == [room_type]
 

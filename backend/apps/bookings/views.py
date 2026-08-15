@@ -13,6 +13,7 @@ from rest_framework.response import Response
 
 from apps.inventory.models import RoomType
 
+from .lifecycle import cancel_booking, expire_stale_holds
 from .quote import calculate_quote
 from .selectors import active_bookings, get_owned_booking, history_bookings
 from .serializers import (
@@ -21,7 +22,6 @@ from .serializers import (
     QuoteRequestSerializer,
     QuoteSerializer,
 )
-from .services import cancel_booking, expire_stale_holds
 from .stay_policy import validate_stay
 
 ERROR_RESPONSE = OpenApiResponse(response={"$ref": "#/components/schemas/ApiError"})

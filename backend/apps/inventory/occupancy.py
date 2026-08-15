@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.contrib.postgres.fields.ranges import DateRange
-from django.db import IntegrityError, connection, transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Exists, OuterRef, QuerySet
 from django.utils import timezone
 
@@ -110,6 +110,6 @@ def allocate(room_type: RoomType, stay: Stay, holder: Booking | MaintenanceBlock
 def release(holder: Booking | MaintenanceBlock) -> None:
     """Idempotently remove the occupancy held by one booking or maintenance block."""
 
-    if connection.vendor != "postgresql" or holder.pk is None:
+    if holder.pk is None:
         return
     RoomOccupancy.objects.filter(**_holder_field(holder)).delete()

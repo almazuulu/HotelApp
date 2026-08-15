@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest.mock import Mock
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -138,13 +139,15 @@ def test_booking_endpoints_return_the_uniform_error_for_anonymous_users() -> Non
 
 
 @pytest.mark.django_db
-def test_stale_hold_expires_before_detail_is_serialized() -> None:
+def test_stale_hold_expires_before_detail_is_serialized(monkeypatch) -> None:
     customer = create_user("stale")
     booking = create_booking(
         customer,
         create_room_type(),
         expires_at=timezone.now() - timedelta(seconds=1),
     )
+    release = Mock()
+    monkeypatch.setattr("apps.inventory.occupancy.release", release)
 
     response = authenticated_client(customer).get(
         reverse("api-v1:bookings:booking-detail", kwargs={"reference": booking.reference})
@@ -156,16 +159,19 @@ def test_stale_hold_expires_before_detail_is_serialized() -> None:
     booking.refresh_from_db()
     assert booking.status == BookingStatus.EXPIRED
     assert booking.expires_at is None
+    release.assert_called_once_with(booking)
 
 
 @pytest.mark.django_db
-def test_stale_hold_expires_before_list_is_serialized() -> None:
+def test_stale_hold_expires_before_list_is_serialized(monkeypatch) -> None:
     customer = create_user("stale-list")
     booking = create_booking(
         customer,
         create_room_type(),
         expires_at=timezone.now() - timedelta(seconds=1),
     )
+    release = Mock()
+    monkeypatch.setattr("apps.inventory.occupancy.release", release)
 
     response = authenticated_client(customer).get(reverse("api-v1:bookings:booking-list"))
 
@@ -174,13 +180,16 @@ def test_stale_hold_expires_before_list_is_serialized() -> None:
     assert response.json()["history"][0]["status"] == BookingStatus.EXPIRED
     booking.refresh_from_db()
     assert booking.status == BookingStatus.EXPIRED
+    release.assert_called_once_with(booking)
 
 
 @pytest.mark.django_db
-def test_customer_can_cancel_only_their_own_booking() -> None:
+def test_customer_can_cancel_only_their_own_booking(monkeypatch) -> None:
     customer = create_user("cancel")
     other_customer = create_user("cancel-other")
     booking = create_booking(customer, create_room_type())
+    release = Mock()
+    monkeypatch.setattr("apps.inventory.occupancy.release", release)
     cancel_url = reverse("api-v1:bookings:booking-cancel", kwargs={"reference": booking.reference})
 
     other_response = authenticated_client(other_customer).post(cancel_url)
@@ -192,3 +201,25 @@ def test_customer_can_cancel_only_their_own_booking() -> None:
     booking.refresh_from_db()
     assert booking.status == BookingStatus.CANCELLED
     assert booking.expires_at is None
+    release.assert_called_once_with(booking)
+
+
+@pytest.mark.django_db
+def test_customer_cannot_cancel_a_paid_booking(monkeypatch) -> None:
+    customer = create_user("paid-cancel")
+    booking = create_booking(
+        customer,
+        create_room_type(),
+        status=BookingStatus.PAID,
+        expires_at=None,
+    )
+    release = Mock()
+    monkeypatch.setattr("apps.inventory.occupancy.release", release)
+
+    response = authenticated_client(customer).post(
+        reverse("api-v1:bookings:booking-cancel", kwargs={"reference": booking.reference})
+    )
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "TRANSITION_NOT_ALLOWED"
+    release.assert_not_called()
