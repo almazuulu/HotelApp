@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import date
 from typing import TYPE_CHECKING
 
 from django.contrib.postgres.fields.ranges import DateRange
@@ -12,6 +10,7 @@ from django.db.models import Exists, OuterRef, QuerySet
 from django.utils import timezone
 
 from apps.bookings.models import Booking
+from apps.bookings.stay_policy import Stay
 from config.errors import ApiErrorCode, DomainError
 
 from .models import MaintenanceBlock, Room, RoomOccupancy, RoomType
@@ -21,19 +20,6 @@ if TYPE_CHECKING:
 
 
 OCCUPANCY_EXCLUSION_CONSTRAINT = "inventory_room_occupancy_no_overlapping_stays"
-
-
-@dataclass(frozen=True)
-class Stay:
-    """An immutable half-open date interval used by the occupancy ledger."""
-
-    check_in: date
-    check_out: date
-
-    def __post_init__(self) -> None:
-        if self.check_in >= self.check_out:
-            raise ValueError("stay check_in must be before check_out")
-
 
 class RoomUnavailable(DomainError):
     """Raised when no physical room can be allocated over a stay interval."""
