@@ -2,6 +2,8 @@
 
 from rest_framework import serializers
 
+from .models import Booking
+
 
 class QuoteRequestSerializer(serializers.Serializer[dict[str, object]]):
     check_in = serializers.DateField()
@@ -24,3 +26,29 @@ class QuoteSerializer(serializers.Serializer[dict[str, object]]):
         decimal_places=2,
         coerce_to_string=True,
     )
+
+
+class BookingSerializer(serializers.ModelSerializer[Booking]):
+    """Customer-safe booking DTO; a physical room is never part of this API."""
+
+    room_type = serializers.SlugRelatedField(read_only=True, slug_field="slug")
+
+    class Meta:
+        model = Booking
+        fields = (
+            "reference",
+            "room_type",
+            "check_in",
+            "check_out",
+            "adults",
+            "children",
+            "status",
+            "hold_expires_at",
+            "payment_due_at",
+            "cancellable_until",
+        )
+
+
+class BookingListSerializer(serializers.Serializer):
+    active = BookingSerializer(many=True)
+    history = BookingSerializer(many=True)
