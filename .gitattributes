@@ -1,0 +1,4 @@
+# The generated DTO file must stay byte-identical to the output of
+# `npm run generate:api-types` so `npm run api-types:check` never fails on
+# line-ending noise, regardless of the developer's autocrlf setting.
+frontend/src/shared/api/generated/schema.d.ts text eol-lf

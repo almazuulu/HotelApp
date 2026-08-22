@@ -6,25 +6,8 @@ import { vi } from 'vitest'
 import { RoomTypeDetailPage } from './RoomTypeDetailPage.tsx'
 import { ApiError, type ApiClient } from '../shared/api/client.ts'
 import { ApiClientContext } from '../shared/api/context.ts'
-import type { RoomType, SiteContent } from '../shared/api/types.ts'
-
-const siteContent: SiteContent = {
-  name: 'Отель Ала-Тоо',
-  tagline: 'Тихое место в центре Бишкека',
-  about_title: 'Добро пожаловать в Отель Ала-Тоо',
-  about_text: 'Здесь начинается спокойное путешествие.',
-  address: 'ул. Токтогула, 101, Бишкек',
-  phone: '+996 312 123 456',
-  email: 'stay@example.com',
-  check_in_time: '14:00:00',
-  check_out_time: '12:00:00',
-  footer_text: 'Спокойное бронирование.',
-  seo_title: 'Отель Ала-Тоо — Бишкек',
-  seo_description: 'Гостиница в центре Бишкека.',
-  seo_keywords: 'отель, Бишкек',
-  hero_slides: [],
-  features: [],
-}
+import type { RoomType } from '../shared/api/types.ts'
+import { stubApiClient } from '../test/stubApiClient.ts'
 
 const deluxe: RoomType = {
   name: 'Делюкс с видом на горы',
@@ -44,18 +27,7 @@ const deluxe: RoomType = {
 }
 
 function createApiClient(getRoomType: ApiClient['catalog']['getRoomType']): ApiClient {
-  return {
-    basePath: '/api/v1',
-    auth: {
-      register: vi.fn(),
-      login: vi.fn(),
-      logout: vi.fn(),
-      me: vi.fn(),
-      updateProfile: vi.fn(),
-    },
-    site: { getContent: vi.fn(async () => siteContent) },
-    catalog: { listRoomTypes: vi.fn(), getRoomType },
-  }
+  return stubApiClient({ catalog: { getRoomType } })
 }
 
 function renderDetail(client: ApiClient, slug = 'delux-mountain') {

@@ -7,6 +7,7 @@ import { ContactsPage } from './ContactsPage.tsx'
 import { ApiError, type ApiClient } from '../shared/api/client.ts'
 import { ApiClientContext } from '../shared/api/context.ts'
 import type { SiteContent } from '../shared/api/types.ts'
+import { stubApiClient } from '../test/stubApiClient.ts'
 
 const siteContent: SiteContent = {
   name: 'Отель Ала-Тоо',
@@ -26,21 +27,6 @@ const siteContent: SiteContent = {
   features: [],
 }
 
-function createApiClient(getContent: ApiClient['site']['getContent']): ApiClient {
-  return {
-    basePath: '/api/v1',
-    auth: {
-      register: vi.fn(),
-      login: vi.fn(),
-      logout: vi.fn(),
-      me: vi.fn(),
-      updateProfile: vi.fn(),
-    },
-    site: { getContent },
-    catalog: { listRoomTypes: vi.fn(), getRoomType: vi.fn() },
-  }
-}
-
 function renderContacts(client: ApiClient) {
   return render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -55,7 +41,7 @@ function renderContacts(client: ApiClient) {
 
 describe('ContactsPage', () => {
   it('renders address, phone, email and reception hours from the CMS document', async () => {
-    renderContacts(createApiClient(vi.fn(async () => siteContent)))
+    renderContacts(stubApiClient({ site: { getContent: vi.fn(async () => siteContent) } }))
 
     const main = screen.getByRole('main')
 
@@ -80,7 +66,7 @@ describe('ContactsPage', () => {
       .mockResolvedValueOnce(siteContent)
     const user = (await import('@testing-library/user-event')).default.setup()
 
-    renderContacts(createApiClient(getContent))
+    renderContacts(stubApiClient({ site: { getContent } }))
 
     await screen.findByRole('heading', { name: 'Контент ещё не опубликован' })
     await user.click(screen.getByRole('button', { name: 'Повторить попытку' }))
