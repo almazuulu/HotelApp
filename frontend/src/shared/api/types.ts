@@ -13,6 +13,11 @@ export type Amenity = components['schemas']['Amenity']
 export type RoomTypeImage = components['schemas']['RoomTypeImage']
 export type ConfirmationMode = components['schemas']['ConfirmationModeEnum']
 export type RoomType = components['schemas']['RoomType']
+export type BookingStatus = components['schemas']['StatusEnum']
+export type Booking = components['schemas']['Booking']
+export type BookingList = components['schemas']['BookingList']
+export type QuoteRequest = components['schemas']['QuoteRequest']
+export type Quote = components['schemas']['Quote']
 
 /** Public catalog query filters; mirrors `inventory.RoomTypeFilterSerializer` on the backend. */
 export interface RoomTypeFilters {

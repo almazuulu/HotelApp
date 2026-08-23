@@ -70,6 +70,8 @@ docker compose exec frontend npm run typecheck
 docker compose exec frontend npm run lint
 docker compose exec frontend npm test
 docker compose exec frontend npm run generate:api-types
+docker compose exec frontend npm run api-types:check
+docker compose exec frontend npm run check
 ```
 
 Вторая команда `pytest` запускает PostgreSQL-набор занятости и concurrency: Django создаёт
@@ -92,7 +94,11 @@ API использует только Django session cookie и CSRF — JWT в �
 - `GET/PATCH me/`;
 - `POST password-reset/` и `password-reset/confirm/`.
 
-Перед каждым изменяющим запросом `shared/api` запрашивает CSRF cookie и передаёт её в `X-CSRFToken`; session cookie отправляется с `credentials: include`. Типы DTO генерируются из OpenAPI: при изменении API запустите `docker compose exec frontend npm run generate:api-types` и зафиксируйте обновлённый `frontend/src/shared/api/generated/schema.d.ts`.
+Перед каждым изменяющим запросом `shared/api` запрашивает CSRF cookie и передаёт её в `X-CSRFToken`; session cookie отправляется с `credentials: include`. Вне `frontend/src/shared/api` нет ни одного вызова fetch, CSRF-заголовка или `credentials` — сетевой адаптер ровно один. Тесты фич внедряют stub-адаптер (`src/test/stubApiClient.ts`) через `ApiClientContext` вместо мока глобального fetch.
+
+Типы DTO генерируются из OpenAPI одной командой `docker compose exec frontend npm run generate:api-types`; обновлённый `frontend/src/shared/api/generated/schema.d.ts` фиксируется в репозитории, а его переводы строк закреплены как LF в `.gitattributes`. Свежесть типов проверяет `npm run api-types:check`: типы перегенерируются в памяти и сравниваются с закоммиченным файлом, при любом расхождении команда падает, поэтому устаревшие типы роняют проверку, а не предупреждают. Источник схемы по умолчанию `http://backend:8000/api/v1/schema/` внутри Compose; снаружи Docker задайте `OPENAPI_SCHEMA_URL` (например, `http://localhost:8000/...`) или передайте путь к файлу схемы позиционным аргументом. CI (`.github/workflows/frontend-api-contract.yml`) дампит схему оффлайн через `manage.py spectacular --format openapi-json` с настройками `config.settings.test` и запускает ту же проверку — без базы данных и секретов. Локально весь набор quality gates фронтенда запускается одной командой `npm run check` (typecheck, lint, test, api-types:check).
+
+Decimal-поля (цены, площадь) приходят и хранятся строками и не парсятся во float; даты и время передаются ISO 8601-строками.
 
 В local-среде письмо для сброса пароля печатается в лог backend. Ссылка в нём строится от `FRONTEND_BASE_URL` из `.env`.
 

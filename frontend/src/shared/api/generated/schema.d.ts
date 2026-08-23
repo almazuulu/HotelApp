@@ -12,7 +12,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Expose the versioned API entry point without introducing a feature endpoint. */
-        get: operations["root_retrieve"];
+        get: operations["api_v1_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -31,7 +31,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description Create a session from username and password. */
-        post: operations["auth_login_create"];
+        post: operations["api_v1_auth_login_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -48,7 +48,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description End the current customer's session. */
-        post: operations["auth_logout_create"];
+        post: operations["api_v1_auth_logout_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -63,14 +63,14 @@ export interface paths {
             cookie?: never;
         };
         /** @description Read or update only the profile belonging to the current session. */
-        get: operations["auth_me_retrieve"];
+        get: operations["api_v1_auth_me_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         /** @description Read or update only the profile belonging to the current session. */
-        patch: operations["auth_me_partial_update"];
+        patch: operations["api_v1_auth_me_partial_update"];
         trace?: never;
     };
     "/api/v1/auth/password-reset/": {
@@ -83,7 +83,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description Request a password reset without disclosing whether the email exists. */
-        post: operations["auth_password_reset_create"];
+        post: operations["api_v1_auth_password_reset_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -100,7 +100,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description Set a new password after a valid standard Django token is supplied. */
-        post: operations["auth_password_reset_confirm_create"];
+        post: operations["api_v1_auth_password_reset_confirm_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -117,7 +117,58 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description Register a customer and begin their Django session. */
-        post: operations["auth_register_create"];
+        post: operations["api_v1_auth_register_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Return the current customer's active and historical bookings. */
+        get: operations["api_v1_bookings_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/{reference}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Return one booking only when it belongs to the authenticated customer. */
+        get: operations["api_v1_bookings_retrieve_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/{reference}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Cancel one owned booking through the booking lifecycle service. */
+        post: operations["api_v1_bookings_cancel_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -132,9 +183,26 @@ export interface paths {
             cookie?: never;
         };
         /** @description Set Django's CSRF cookie for the session-authenticated SPA. */
-        get: operations["csrf_retrieve"];
+        get: operations["api_v1_csrf_retrieve"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quotes/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Return current availability and price without reserving inventory. */
+        post: operations["api_v1_quotes_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -149,7 +217,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Return all public room categories, optionally filtered by capacity and amenities. */
-        get: operations["room_types_list"];
+        get: operations["api_v1_room_types_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -166,7 +234,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Return one public category by slug without exposing physical room assignment. */
-        get: operations["room_types_retrieve"];
+        get: operations["api_v1_room_types_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -183,7 +251,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Return the complete fixed CMS document for the one hotel. */
-        get: operations["site_retrieve"];
+        get: operations["api_v1_site_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -215,6 +283,53 @@ export interface components {
         ApiRoot: {
             service: string;
             version: string;
+        };
+        /** @description Customer-safe booking DTO; a physical room is never part of this API. */
+        Booking: {
+            /** Format: uuid */
+            readonly reference: string;
+            readonly room_type: string;
+            /**
+             * Заезд
+             * Format: date
+             */
+            check_in: string;
+            /**
+             * Выезд
+             * Format: date
+             */
+            check_out: string;
+            /**
+             * Взрослые
+             * Format: int64
+             */
+            adults: number;
+            /**
+             * Дети
+             * Format: int64
+             */
+            children: number;
+            /** Статус */
+            status: components["schemas"]["StatusEnum"];
+            /**
+             * Срок удержания
+             * Format: date-time
+             */
+            hold_expires_at?: string | null;
+            /**
+             * Срок оплаты
+             * Format: date-time
+             */
+            payment_due_at?: string | null;
+            /**
+             * Отмена доступна до
+             * Format: date-time
+             */
+            cancellable_until?: string | null;
+        };
+        BookingList: {
+            active: components["schemas"]["Booking"][];
+            history: components["schemas"]["Booking"][];
         };
         /**
          * @description * `automatic` - автоматическое
@@ -294,6 +409,23 @@ export interface components {
             last_name?: string;
             phone?: string;
         };
+        Quote: {
+            available: boolean;
+            nights: number;
+            /** Format: decimal */
+            price_per_night: string;
+            /** Format: decimal */
+            total: string;
+        };
+        QuoteRequest: {
+            /** Format: date */
+            check_in: string;
+            /** Format: date */
+            check_out: string;
+            room_type: string;
+            adults: number;
+            children: number;
+        };
         /** @description Create an active customer account without exposing a password later. */
         Registration: {
             /**
@@ -320,12 +452,18 @@ export interface components {
             description: string;
             /** Format: decimal */
             readonly price_per_night: string;
-            /** Максимум взрослых */
+            /**
+             * Максимум взрослых
+             * Format: int64
+             */
             max_adults: number;
             readonly max_children: number;
             /** Format: decimal */
             readonly area_sqm: string;
-            /** Количество кроватей */
+            /**
+             * Количество кроватей
+             * Format: int64
+             */
             bed_count: number;
             readonly confirmation_mode: components["schemas"]["ConfirmationModeEnum"];
             readonly amenities: components["schemas"]["Amenity"][];
@@ -374,6 +512,16 @@ export interface components {
             readonly hero_slides: components["schemas"]["HeroSlide"][];
             readonly features: components["schemas"]["HotelFeature"][];
         };
+        /**
+         * @description * `pending_confirmation` - ожидает подтверждения
+         *     * `awaiting_payment` - ожидает оплаты
+         *     * `paid` - оплачена
+         *     * `rejected` - отклонена
+         *     * `cancelled` - отменена
+         *     * `expired` - истекла
+         * @enum {string}
+         */
+        StatusEnum: "pending_confirmation" | "awaiting_payment" | "paid" | "rejected" | "cancelled" | "expired";
         /** @description The customer-safe representation of the signed-in user. */
         User: {
             readonly id: number;
@@ -400,7 +548,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    root_retrieve: {
+    api_v1_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -459,7 +607,7 @@ export interface operations {
             };
         };
     };
-    auth_login_create: {
+    api_v1_auth_login_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -508,7 +656,7 @@ export interface operations {
             };
         };
     };
-    auth_logout_create: {
+    api_v1_auth_logout_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -542,7 +690,7 @@ export interface operations {
             };
         };
     };
-    auth_me_retrieve: {
+    api_v1_auth_me_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -585,7 +733,7 @@ export interface operations {
             };
         };
     };
-    auth_me_partial_update: {
+    api_v1_auth_me_partial_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -634,7 +782,7 @@ export interface operations {
             };
         };
     };
-    auth_password_reset_create: {
+    api_v1_auth_password_reset_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -675,7 +823,7 @@ export interface operations {
             };
         };
     };
-    auth_password_reset_confirm_create: {
+    api_v1_auth_password_reset_confirm_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -716,7 +864,7 @@ export interface operations {
             };
         };
     };
-    auth_register_create: {
+    api_v1_auth_register_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -757,7 +905,116 @@ export interface operations {
             };
         };
     };
-    csrf_retrieve: {
+    api_v1_bookings_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingList"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    api_v1_bookings_retrieve_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reference: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    api_v1_bookings_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reference: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    api_v1_csrf_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -776,7 +1033,48 @@ export interface operations {
             };
         };
     };
-    room_types_list: {
+    api_v1_quotes_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["QuoteRequest"];
+                "multipart/form-data": components["schemas"]["QuoteRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Quote"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    api_v1_room_types_list: {
         parameters: {
             query?: {
                 /** @description Минимальная вместимость по взрослым; целое число от 1. */
@@ -810,7 +1108,7 @@ export interface operations {
             };
         };
     };
-    room_types_retrieve: {
+    api_v1_room_types_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -839,7 +1137,7 @@ export interface operations {
             };
         };
     };
-    site_retrieve: {
+    api_v1_site_retrieve: {
         parameters: {
             query?: never;
             header?: never;

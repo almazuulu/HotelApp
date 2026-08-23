@@ -7,6 +7,7 @@ import { AboutPage } from './AboutPage.tsx'
 import { ApiError, type ApiClient } from '../shared/api/client.ts'
 import { ApiClientContext } from '../shared/api/context.ts'
 import type { SiteContent } from '../shared/api/types.ts'
+import { stubApiClient } from '../test/stubApiClient.ts'
 
 const siteContent: SiteContent = {
   name: 'Отель Ала-Тоо',
@@ -26,21 +27,6 @@ const siteContent: SiteContent = {
   features: [{ icon: '☕', title: 'Завтрак', description: 'Начинайте день без спешки.' }],
 }
 
-function createApiClient(getContent: ApiClient['site']['getContent']): ApiClient {
-  return {
-    basePath: '/api/v1',
-    auth: {
-      register: vi.fn(),
-      login: vi.fn(),
-      logout: vi.fn(),
-      me: vi.fn(),
-      updateProfile: vi.fn(),
-    },
-    site: { getContent },
-    catalog: { listRoomTypes: vi.fn(), getRoomType: vi.fn() },
-  }
-}
-
 function renderAbout(client: ApiClient) {
   return render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -55,7 +41,7 @@ function renderAbout(client: ApiClient) {
 
 describe('AboutPage', () => {
   it('renders the CMS story once as the page heading and applies SEO', async () => {
-    renderAbout(createApiClient(vi.fn(async () => siteContent)))
+    renderAbout(stubApiClient({ site: { getContent: vi.fn(async () => siteContent) } }))
 
     expect(await screen.findByRole('heading', { name: 'Добро пожаловать в Отель Ала-Тоо' })).toBeInTheDocument()
     expect(screen.getAllByText('Добро пожаловать в Отель Ала-Тоо')).toHaveLength(1)
@@ -71,7 +57,7 @@ describe('AboutPage', () => {
       .mockResolvedValueOnce(siteContent)
     const user = (await import('@testing-library/user-event')).default.setup()
 
-    renderAbout(createApiClient(getContent))
+    renderAbout(stubApiClient({ site: { getContent } }))
 
     await screen.findByRole('heading', { name: 'Контент ещё не опубликован' })
     await user.click(screen.getByRole('button', { name: 'Повторить попытку' }))

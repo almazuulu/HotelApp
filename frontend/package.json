@@ -11,7 +11,9 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "generate:api-types": "openapi-typescript http://backend:8000/api/v1/schema/?format=json -o src/shared/api/generated/schema.d.ts"
+    "generate:api-types": "node scripts/generate-api-types.mjs",
+    "api-types:check": "node scripts/generate-api-types.mjs --check",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run api-types:check"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.66.0",

@@ -1,0 +1,47 @@
+# Frontend API-contract gate: the committed DTO file must match the backend's
+# OpenAPI schema exactly. The schema is dumped offline with the test settings
+# (SQLite, no secrets), so the job needs no database and no repository secrets.
+# Issue #25 will fold this into the general quality-gate workflow unchanged.
+name: Frontend API contract
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  frontend-api-contract:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: backend/requirements/base.txt
+
+      - name: Install backend dependencies
+        run: pip install -r ../backend/requirements/base.txt
+
+      - name: Dump the OpenAPI schema offline
+        run: python ../backend/manage.py spectacular --format openapi-json --file ../schema.json --validate
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.test
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      - name: Generated API types must match the schema
+        run: npm run api-types:check -- ../schema.json
+
+      - name: Typecheck
+        run: npm run typecheck

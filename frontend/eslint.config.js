@@ -9,6 +9,11 @@ export default [
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
+    // Node scripts (API-type generation) run outside the browser.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: { ecmaVersion: 'latest', globals: { ...globals.node } },
+  },
+  {
     files: ['src/**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 'latest',
